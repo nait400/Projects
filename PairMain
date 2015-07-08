@@ -89,8 +89,8 @@ c sixth row
 
       call cg(6, 6, Ham, matrix, wreal, wimg, 1, zreal, zimg,
      1         fv1, fv2, fv3, ierr)
+     	m=1
 	do n=1,6
-	m=1
 	if(wreal(n).lt.wreal(m))then
 	m=n
 	endif
