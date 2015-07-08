@@ -23,12 +23,30 @@ c
        integer ierr
       real*8 Ham(6,6), fv1(6), fv2(6), fv3(6), matrix(6,6)
       real*8 wreal(6), wimg(6), zreal(6,6), zimg(6,6)
+	integer ar(4),br(4),ir(4),jr(4)
+	real*8, dimension(4) :: work  ! work array for LAPACK
+	integer, dimension(4) :: ipiv   ! pivot indices
+	real*8 CC1(4,4),CC2(4,4),C1(4,4),C2(4,4),One(4,4),TT(4,4)
+
+	data One/1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1./
+
+	data ar/5,6,7,8/
+	data br/6,5,8,7/
+	data ir/1,2,3,4/
+	data jr/2,1,4,3/
+
 c
 
 	open(10,file='out.dat')
 
-	do ig=1,100
-      g =-1.+0.02*ig
+c	do ig=1,100
+
+
+
+      g =0.5
+
+
+
       Ecor=0.
       do i=1,4
          do j=1,4
@@ -43,6 +61,45 @@ c
                end do
             end do
       end do
+	end do
+	
+
+	do i=1,4
+	do j=1,4
+	left=0.
+	right=0.
+	below=0.
+
+	call corr(ar(i),br(i),ir(j),jr(j),left)	
+	call corr(ar(i),br(i),ar(j),br(j),right)
+	call Espec(ar(i),br(i),ir(j),jr(j),below)
+
+	CC1(i,j)=left*g
+	CC2(i,j)=0.25*g*right/below
+	
+
+
+	
+	end do
+	end do
+
+
+	C1(:,:)=One(:,:)-CC2(:,:)
+
+	C2=C1
+	call DGETRF(4, 4, C2, 4, ipiv, ierr)
+	call DGETRI(4,C2,4,ipiv, work, n, ierr)
+	
+
+	TT=MATMUL(C2,CC1)
+
+
+	do i=1,4
+	do j=1,4
+
+	write(6,*) TT(i,j)
+
+	end do
 	end do
 
       Ham(1,1)=2.-g
@@ -89,7 +146,11 @@ c sixth row
 
       call cg(6, 6, Ham, matrix, wreal, wimg, 1, zreal, zimg,
      1         fv1, fv2, fv3, ierr)
-     	m=1
+
+
+
+
+	m=1
 	do n=1,6
 	if(wreal(n).lt.wreal(m))then
 	m=n
@@ -98,7 +159,7 @@ c sixth row
 
 	write(10,*)g,Ecor+2-g,wreal(m)
 
-	end do
+c	end do
 
 	
       end program main
@@ -123,7 +184,7 @@ c sixth row
 	ans=-1./2.
 	return
 	endif 
-      if (sy(a)%s .ne. sy(j)%s) then
+      if (sy(a)%s .eq. sy(j)%s) then
 	ans=1./2.
 	return
 	endif
