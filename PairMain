@@ -18,7 +18,7 @@
 	use states
 c
       integer i,j,a,b,N
-      real*8 Ecor,g,left,right,below
+      real*8 Ecor,g,left,right,below,Eccd
 
        integer ierr
       real*8 Ham(6,6), fv1(6), fv2(6), fv3(6), matrix(6,6)
@@ -27,6 +27,7 @@ c
 	real*8, dimension(4) :: work  ! work array for LAPACK
 	integer, dimension(4) :: ipiv   ! pivot indices
 	real*8 CC1(4,4),CC2(4,4),C1(4,4),C2(4,4),One(4,4),TT(4,4)
+	real*8 Ts(4,4)
 
 	data One/1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1./
 
@@ -39,11 +40,10 @@ c
 
 	open(10,file='out.dat')
 
-c	do ig=1,100
+	do ig=1,100
 
 
-
-      g =0.5
+	g=-1.+0.02*ig
 
 
 
@@ -76,19 +76,18 @@ c	do ig=1,100
 
 	CC1(i,j)=left*g
 	CC2(i,j)=0.25*g*right/below
-	
-
 
 	
 	end do
 	end do
 
+	write(6,*)g
 
 	C1(:,:)=One(:,:)-CC2(:,:)
 
 	C2=C1
 	call DGETRF(4, 4, C2, 4, ipiv, ierr)
-	call DGETRI(4,C2,4,ipiv, work, n, ierr)
+	call DGETRI(4,C2,4,ipiv, work,4, ierr)
 	
 
 	TT=MATMUL(C2,CC1)
@@ -97,10 +96,26 @@ c	do ig=1,100
 	do i=1,4
 	do j=1,4
 
-	write(6,*) TT(i,j)
+	call Espec(ar(i),br(i),ir(j),jr(j),below)
+
+	Ts(i,j)=TT(i,j)/below
 
 	end do
 	end do
+
+
+	Eccd=0.
+
+	do i=1,4
+	do j=1,4
+
+	Eccd=Eccd+0.25*CC1(i,j)*Ts(i,j)
+	
+	end do 
+	end do
+
+
+
 
       Ham(1,1)=2.-g
       Ham(1,2) = -g/2.
@@ -157,9 +172,9 @@ c sixth row
 	endif
 	end do
 
-	write(10,*)g,Ecor+2-g,wreal(m)
+	write(10,*)g,Ecor+2-g,wreal(m),Eccd+2-g
 
-c	end do
+	end do
 
 	
       end program main
