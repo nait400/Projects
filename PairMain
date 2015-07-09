@@ -23,18 +23,18 @@ c
        integer ierr
       real*8 Ham(6,6), fv1(6), fv2(6), fv3(6), matrix(6,6)
       real*8 wreal(6), wimg(6), zreal(6,6), zimg(6,6)
-	integer ar(4),br(4),ir(4),jr(4)
+	integer ar(2),br(2),ir(2),jr(2)
 	real*8, dimension(4) :: work  ! work array for LAPACK
 	integer, dimension(4) :: ipiv   ! pivot indices
-	real*8 CC1(4,4),CC2(4,4),C1(4,4),C2(4,4),One(4,4),TT(4,4)
-	real*8 Ts(4,4)
+	real*8 CC1(4,1),CC2(4,4),C1(4,4),C2(4,4),One(4,4),TT(4,1)
+	real*8 Ts(4,1)
 
 	data One/1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1./
 
-	data ar/5,6,7,8/
-	data br/6,5,8,7/
-	data ir/1,2,3,4/
-	data jr/2,1,4,3/
+	data ar/5,7/
+	data br/6,8/
+	data ir/1,3/
+	data jr/2,4/
 
 c
 
@@ -64,24 +64,43 @@ c
 	end do
 	
 
-	do i=1,4
-	do j=1,4
-	left=0.
-	right=0.
-	below=0.
+	idex=1
+
+	CC2=0.
+	CC1=0.
+	do i=1,2
+	do j=1,2
 
 	call corr(ar(i),br(i),ir(j),jr(j),left)	
 	call corr(ar(i),br(i),ar(j),br(j),right)
-	call Espec(ar(i),br(i),ir(j),jr(j),below)
 
-	CC1(i,j)=left*g
-	CC2(i,j)=0.25*g*right/below
+	CC1(idex,1)=left*g
+	idex=idex+1
 
+	CC2(i,j)=0.25*g*right
+	CC2(i+2,j+2)=0.25*g*right
 	
 	end do
 	end do
 
-	write(6,*)g
+	do a=1,2
+	do i=1,2
+	call Espec(ar(a),br(a),ir(i),jr(i),below)
+
+	if(i.eq.1)then
+	CC2(i,a)=CC2(i,a)/below
+	CC2(i+1,a)=CC2(i+1,a)/below
+	endif
+	
+	if(i.eq.2)then
+	CC2(i+1,a+2)=CC2(i+1,a+2)/below
+	CC2(i+2,a+2)=CC2(i+2,a+2)/below
+	endif
+
+	end do
+	end do
+
+c	write(6,*)g
 
 	C1(:,:)=One(:,:)-CC2(:,:)
 
@@ -92,13 +111,14 @@ c
 
 	TT=MATMUL(C2,CC1)
 
-
-	do i=1,4
-	do j=1,4
+	idex=1
+	do i=1,2
+	do j=1,2
 
 	call Espec(ar(i),br(i),ir(j),jr(j),below)
 
-	Ts(i,j)=TT(i,j)/below
+	Ts(idex,1)=TT(idex,1)/below
+	idex=idex+1
 
 	end do
 	end do
@@ -107,11 +127,9 @@ c
 	Eccd=0.
 
 	do i=1,4
-	do j=1,4
 
-	Eccd=Eccd+0.25*CC1(i,j)*Ts(i,j)
+	Eccd=Eccd+CC1(i,1)*Ts(i,1)
 	
-	end do 
 	end do
 
 
