@@ -257,11 +257,11 @@ c sixth row
 	return
 	endif
       if (sy(a)%s .eq. sy(i)%s) then 
-	ans=-1./2.
+	ans=-1.
 	return
 	endif 
       if (sy(a)%s .eq. sy(j)%s) then
-	ans=1./2.
+	ans=1.
 	return
 	endif
       end subroutine corr
